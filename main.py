@@ -1,8 +1,14 @@
-import os.path
-import argparse
-from sys import stderr
+import gc
 from time import sleep
 from typing import Iterator
+from sys import implementation
+
+emulated = implementation.name == "cpython"
+if emulated:
+    from emulator import SoftwareTerminal
+else:
+    from hardware import HardwareTerminal
+    from keypad import Keypad
 
 from components.cpu import Cpu
 from components.ram import Ram
@@ -12,34 +18,6 @@ from components.serial import SerialOutput
 from components.expansion_slot import ExpansionSlot
 from components.mm_component import MemoryMappedComponent
 from components.expansion_slot import RomExpansion, BbRamExpansion
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="ozpex-64",
-        description = "A fictional 8-bit computer and emulator based on the "
-                      "6502",
-    )
-                         
-    parser.add_argument("-1", "--slot1")
-    parser.add_argument("-2", "--slot2")
-    
-    parser.add_argument("-r", "--rom",
-                        default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "roms", "monitor.bin"),
-                        help="overwrite the default monitor rom")
-    
-    parser.add_argument("-d", "--debug",
-                        action="store_true",
-                        help="watch the emulator execute individual instructions")
-    
-    parser.add_argument("-n", "--nocrash",
-                        action="store_true",
-                        help="disable crashes on unknown opcodes")
-    
-    parser.add_argument("-g", "--gui",
-                        action="store_true",
-                        help="start the ozpex 64 gui (ignores other arguments)")
-    
-    return parser.parse_args()
 
 def load_slot(literal: str, slot: ExpansionSlot) -> None:
     parts = literal.split(":")
@@ -81,8 +59,9 @@ def create_machine(rom: str, slot1: str|None, slot2: str|None,
         "rom": Rom(0xc003, 0xffff),
     })
 
+    gc.collect()
     with open(rom, "rb") as f:
-        rom_data = list(f.read())
+        rom_data = bytearray(f.read())
     cpu.mm_components["rom"].load(rom_data, 0xc003)
         
     if slot1: load_slot(slot1, cpu.mm_components["slot1"])
@@ -92,41 +71,40 @@ def create_machine(rom: str, slot1: str|None, slot2: str|None,
     
     return cpu
 
-def simulate(cpu: Cpu, nocrash: bool, debug: bool) -> Iterator[None]:
+def simulate(cpu: Cpu) -> Iterator[None]:
     cycles_executed = 0
     
     while True:
         try:
-            instr = cpu.execute()
+            instr = cpu.execute()      
             yield
-                       
-        except NotImplementedError as e:    
-            if nocrash: continue
-            print("\n\n\033[31m", end="")
-            print(f"6502: {e}, execution aborted.", end="")
-            print("\033[0m")
-            exit(1)
-        if debug:
-            cpu.visualise(instr)
-            input()
+        except NotImplementedError as e: pass
 
 def main() -> None:
-    args = parse_args()
-    
-    if args.gui:
-        import gui.main
-        gui.main.App().mainloop()
-        return
-    
-    cpu = create_machine(args.rom, args.slot1, args.slot2, SerialOutput)
-    
-    cycle = 0
-    for _ in simulate(cpu, args.nocrash, args.debug):
-        # on my computer, this gets ~1MHz
-        if cycle % 200 == 0:
-            cycle = 0
-            sleep(0.000001)
-        cycle += 1
+    if emulated:
+        terminal = SoftwareTerminal(160, 128, 10)
+    else:
+        keypad = Keypad(['1', '2', '3', 'a',
+                    '4', '5', '6', 'b',
+                    '7', '8', '9', 'c',
+                    '*', '0', '#', 'd'],
+                    [0, 1, 2, 3],
+                    [4, 5, 6, 7],
+                    4, 4)    
+        keypad.set_debounce_time(400)
+        terminal = HardwareTerminal(keypad)
+        
+    terminal.write("Booting...")
+    terminal.refresh()
+
+    cpu = create_machine("rom.bin", None, None, SerialOutput)
+    serial = cpu.mm_components["serial"]
+    terminal.clear()
+
+    for _ in simulate(cpu):
+        key = terminal.frame(serial.output)
+        if key: serial.input = key
+        serial.output = None
 
 if __name__ == "__main__":
     try:

@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import Optional
 from time import sleep
 
@@ -486,18 +485,14 @@ class Isa:
         self.cpu.overflow = get_bit(value, 6)
         self.cpu.negative = get_bit(value, 7)
 
+class UnmappedMemory():
+    def contains(self, addr: int) -> bool: return False
+    def fetch(self, addr: int) -> int: return randint(0x00, 0xff)
+    def write(self, addr: int, val: int) -> None: pass
+
 class Cpu:
     def __init__(self, components: dict[str, MemoryMappedComponent]) -> None:
         self.mm_components = components
-        
-        self.mm_component_map: list[MemoryMappedComponent | None] = []
-        for i in range(MAX_ADDR+1):
-            component = None
-            for c in self.mm_components.values():
-                if c.contains(i):
-                    component = c
-                    break
-            self.mm_component_map.append(component)
             
         self.isa = Isa(self)
         
@@ -561,9 +556,9 @@ class Cpu:
         self.pc = build_word(high, low)
         
     def resolve_component(self, addr: int) -> MemoryMappedComponent:
-        c = self.mm_component_map[addr]
-        if c is None: raise IndexError("Unmapped memory area accessed.")
-        return c
+        for c in self.mm_components.values():
+            if c.contains(addr): return c
+        return UnmappedMemory()
     
     def fetch(self, addr: int) -> int:
         if addr == ACC_ADDR:

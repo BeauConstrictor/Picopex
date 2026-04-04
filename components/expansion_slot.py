@@ -1,6 +1,5 @@
 from typing import Callable
 from random import randint
-import os.path
 
 from components.mm_component import MemoryMappedComponent
 
@@ -59,11 +58,11 @@ class BbRamExpansion:
         self.path = path
         self.addresses = bytearray(0x2000)
 
-        if os.path.exists(self.path):
+        try:
             with open(self.path, "rb") as f:
                 data = f.read()
             self.addresses[:len(data)] = data
-        else:
+        except OSError:
             with open(self.path, "wb") as f:
                 f.write(self.addresses)
 

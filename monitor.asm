@@ -18,7 +18,13 @@ CURRENT_ADDR = $30      ; 2 bytes
 RANGE_END    = $32      ; 2 bytes
 
 reset:
-  lda #welcome_message
+  ; initial address
+  lda #$10
+  sta CURRENT_ADDR+1
+  lda #$00
+  sta CURRENT_ADDR
+
+  lda #<welcome_message
   sta PRINT
   lda #>welcome_message
   sta PRINT+1
@@ -35,6 +41,9 @@ loop:
   ; write it to the address
   ldy #0
   sta (CURRENT_ADDR),y
+
+  lda #" "
+  sta SERIAL
 
   jsr next_addr
 
@@ -76,31 +85,47 @@ get_key:
   lda SERIAL
   beq get_key             ; if no char was typed, check again.
 
-  cmp #"@"                ; if "@" was pressed,
+  cmp #"#"                ; if "#" was press
+  beq _get_key_shift      ; wait for the second key of the chord
+
+  cmp #"*"                ; if "C" was pressed,
   beq _get_key_new_addr   ; change address
 
-  cmp #"!"                ; if shift+1 was pressed,
-  beq _get_key_cs1        ; start cs1
-  cmp #$22                ; if shift+2 was pressed,
-  beq _get_key_cs2        ; start cs2
+  sta SERIAL
+  rts                     ; otherwise, return the key
+_get_key_shift:
+  lda #"?"                ; show a shift prompt
+  sta SERIAL
+_get_key_shift_wait:
+  lda SERIAL
+  beq _get_key_shift_wait
 
-  cmp #">"                ; if "." was pressed,
+  ldx #BACKSPACE
+  stx SERIAL
+  ldy #" "
+  sty SERIAL
+  stx SERIAL
+
+  cmp #"a"                ; if "A" was pressed,
+  beq _get_key_shift_hex   ; return 0xe
+
+  cmp #"b"                ; if "B" was pressed,
+  beq _get_key_shift_hex   ; return 0xf
+
+  cmp #"c"                ; if "C" was pressed,
   beq _get_key_addr_range ; print an address range
 
-  sta SERIAL               ; echo back the char.
-
-  cmp #"x"                ; if "x" was pressed,
+  cmp #"d"                ; if "D" was pressed,
   beq _get_key_execute    ; execute a program
 
-  cmp #" "                 ; if space was pressed,
-  beq get_key              ; wait for the next key.
-  cmp #NEWLINE             ; if newline was pressed,
-  beq _get_key_newline     ; handle it.
-  cmp #";"                 ; if space was pressed,
-  beq _get_key_comment     ; start a comment.
-
-  rts
-_get_key_newline:
+  cmp #"*"                ; if "D" was pressed,
+  beq _get_key_check_addr    ; check the address
+_get_key_shift_hex:
+  clc
+  adc #4                  ; go 4 digits ahead in hex and
+  sta SERIAL
+  rts                     ; return the actual letter they were trying to type
+_get_key_check_addr:
   ; show the latest memory address
   jsr print_addr
   jmp get_key
@@ -120,27 +145,6 @@ _get_key_new_addr:
   sta SERIAL
 
   jmp get_key
-_get_key_comment:
-  lda SERIAL                ; read a key.
-  sta SERIAL
-  cmp #NEWLINE              ; only if it's a newline,
-  beq _get_key_newline      ; exit the comment
-
-  cmp #DELETE               ; if they pressed backspace,
-  bne _get_key_comment
-  lda #BACKSPACE            ; move cursor back
-  sta SERIAL
-  lda #" "                  ; clear character
-  sta SERIAL     
-  lda #BACKSPACE            ; move cursor back twice
-  sta SERIAL
-  jmp _get_key_comment
-_get_key_cs1:
-  jsr $8003
-  jmp loop
-_get_key_cs2:
-  jsr $a003
-  jmp loop
 _get_key_execute:
   lda #NEWLINE
   sta SERIAL
@@ -149,7 +153,7 @@ _get_key_execute:
 _get_key_execute_subroutine:
   jmp (CURRENT_ADDR)
 _get_key_addr_range:
-  lda #addr_range_prompt
+  lda #<addr_range_prompt
   sta PRINT
   lda #>addr_range_prompt
   sta PRINT+1
@@ -170,9 +174,9 @@ _get_key_addr_range:
   jmp _get_key_addr_range_loop_skip_addr_print
 
 _get_key_addr_range_loop:
-  ; if the last nibble is 0, print the full address
+  ; new line every 8 addresses
   lda CURRENT_ADDR
-  and #$0f
+  and #$07
   bne _get_key_addr_range_loop_skip_addr_print
   lda #NEWLINE
   sta SERIAL
@@ -291,7 +295,7 @@ _print_done:
 
 welcome_message:
   .byte CLEAR
-  .byte "**** Ozpex 64 Monitor v2.0.0 ****", NEWLINE
+  .byte "Ozpex 64 Monitor (Portable) v1.0.0", NEWLINE
 
   .byte NEWLINE, 0
 

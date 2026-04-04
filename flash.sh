@@ -1,0 +1,1 @@
+mpremote fs cp -r ./ :/
