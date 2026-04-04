@@ -50,6 +50,8 @@ def create_machine(rom: str, slot1: str|None, slot2: str|None,
     # rom:    $c003 -> $ffff  (16,381 B) - an odd size, but it's just whatever
     #                                      fit in the remaining space
     
+    gc.collect()
+
     cpu = Cpu({
         "ram": Ram(0x0000, 0x7fff),
         "timer": Timer(0x8000, 0x8001),
@@ -61,11 +63,12 @@ def create_machine(rom: str, slot1: str|None, slot2: str|None,
 
     gc.collect()
     with open(rom, "rb") as f:
-        rom_data = bytearray(f.read())
-    cpu.mm_components["rom"].load(rom_data, 0xc003)
+        cpu.mm_components["rom"].load(f, 0xc003)
         
     if slot1: load_slot(slot1, cpu.mm_components["slot1"])
     if slot2: load_slot(slot2, cpu.mm_components["slot2"])
+
+    print(gc.mem_free())
     
     cpu.reset()
     

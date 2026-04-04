@@ -7,11 +7,13 @@ class Rom(MemoryMappedComponent):
         
         self.addresses = bytearray(self.end - self.start + 1)
         
-    def load(self, data: list[int], start_addr: int) -> None:
+    def load(self, f, start_addr: int) -> None:
         addr = start_addr
         
-        for d in data:
-            self.addresses[addr - self.start] = d
+        while True:
+            byte = f.read(1)[0]
+            if not byte: break
+            self.addresses[addr - self.start] = byte
             addr += 1
     
     def contains(self, addr: int) -> bool:
