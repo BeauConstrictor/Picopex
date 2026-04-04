@@ -1,1 +1,1 @@
-mpremote fs cp -r ./ :/
+mpremote fs cp -r ./ :/picopex
