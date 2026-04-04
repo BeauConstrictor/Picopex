@@ -207,12 +207,12 @@ class HardwareTerminal:
         self.oled.show()
 
     def write(self, text: str, char_spacing: int=1, line_height: int=7) -> None:
-        will_wrap = self.cursor[0] > self.oled.width - PAD_X - CHR_WIDTH
+        will_wrap = self.cursor[0] > self.oled.width - PAD_X - line_height
         for ch in text:
             if ch == "\n":
                 if not will_wrap: self.write(" ")
                 self.cursor[0] = PAD_X
-                if self.cursor[1] + line_height > self.oled.height:
+                if self.cursor[1] + line_height > self.oled.height-PAD_Y:
                     self.clear()
                 else:
                     self.cursor[1] += line_height
