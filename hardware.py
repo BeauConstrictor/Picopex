@@ -35,12 +35,6 @@ class LCD_1inch8(framebuf.FrameBuffer):
         super().__init__(self.buffer, self.width, self.height, framebuf.RGB565)
         self.init_display()
         
-        self.WHITE = 0xFFFF
-        self.BLACK = 0x0000
-        self.GREEN = 0x001F
-        self.BLUE  = 0xF800
-        self.RED   = 0x07E0
-        
     def write_cmd(self, cmd):
         self.cs(1)
         self.dc(0)
@@ -207,13 +201,14 @@ class HardwareTerminal:
         self.oled.show()
 
     def write(self, text: str, char_spacing: int=1, line_height: int=7) -> None:
-        will_wrap = self.cursor[0] > self.oled.width - PAD_X - line_height
+        will_wrap = self.cursor[0] > self.oled.width - PAD_X - CHR_WIDTH
         for ch in text:
             if ch == "\n":
                 if not will_wrap: self.write(" ")
                 self.cursor[0] = PAD_X
                 if self.cursor[1] + line_height > self.oled.height-PAD_Y:
                     self.clear()
+                    # instead, can i shift the framebuffer up by lineheight?
                 else:
                     self.cursor[1] += line_height
                 continue
