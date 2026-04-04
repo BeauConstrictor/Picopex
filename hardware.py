@@ -200,6 +200,28 @@ class HardwareTerminal:
         self.oled.fill(0x0000)
         self.oled.show()
 
+    def scroll(self, dy: int) -> None:
+        width = self.oled.width
+        height = self.oled.height
+        buf = self.oled.buffer
+        row_bytes = width * 2
+
+        if dy >= height:
+            for i in range(len(buf)):
+                buf[i] = 0
+            return
+
+        for y in range(height - dy):
+            src_start = (y + dy) * row_bytes
+            dest_start = y * row_bytes
+            for i in range(row_bytes):
+                buf[dest_start + i] = buf[src_start + i]
+
+        for y in range(height - dy, height):
+            start = y * row_bytes
+            for i in range(row_bytes):
+                buf[start + i] = 0
+
     def write(self, text: str, char_spacing: int=1, line_height: int=7) -> None:
         will_wrap = self.cursor[0] > self.oled.width - PAD_X - CHR_WIDTH
         for ch in text:
@@ -207,8 +229,7 @@ class HardwareTerminal:
                 if not will_wrap: self.write(" ")
                 self.cursor[0] = PAD_X
                 if self.cursor[1] + line_height > self.oled.height-PAD_Y:
-                    self.clear()
-                    # instead, can i shift the framebuffer up by lineheight?
+                    self.scroll(line_height)
                 else:
                     self.cursor[1] += line_height
                 continue
