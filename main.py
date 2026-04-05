@@ -5,18 +5,21 @@ from time import sleep
 from typing import Iterator
 from sys import implementation
 
+RESET_SEQ = "abcd369*"
 
 emulated = implementation.name == "cpython"
 if emulated:
     from emulator import SoftwareTerminal
+    from components.software_timer import Timer
 else:
+    from components.hardware_timer import Timer
     from hardware import HardwareTerminal
     from keypad import Keypad
+    import machine
     
 from components.cpu import Cpu
 from components.ram import Ram
 from components.rom import Rom
-from components.timer import Timer
 from components.serial import SerialOutput
 from components.expansion_slot import ExpansionSlot
 from components.mm_component import MemoryMappedComponent
@@ -111,9 +114,22 @@ def main() -> None:
     serial = cpu.mm_components["serial"]
     terminal.clear()
 
+    key_seq = ""
+
     for _ in simulate(cpu):
         key = terminal.frame(serial.output)
-        if key: serial.input = key
+        if key:
+            serial.input = key
+            key_seq += key
+            if len(key_seq) > len(RESET_SEQ):
+                key_seq = key_seq[1:]
+            if not emulated:
+                if key_seq == RESET_SEQ:
+                    terminal.clear()
+                    terminal.write("Reset.")
+                    terminal.refresh()
+                    machine.soft_reset()
+
         serial.output = None
 
 if __name__ == "__main__":

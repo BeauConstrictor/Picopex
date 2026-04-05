@@ -19,3 +19,7 @@ To perform other functions, press `#` followed by another key:
 ## Cartridges
 
 There is no (officially supported) way to wire physical cartridge slots to the Pi Pico, but cartridges can be swapped when the Picopex is connected to a computer using `cswap.py`.
+
+## Emergency Reset
+
+To force reset Picopex, press `ABCD369*`.
