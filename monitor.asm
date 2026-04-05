@@ -127,6 +127,8 @@ _get_key_shift_hex:
   rts                     ; return the actual letter they were trying to type
 _get_key_check_addr:
   ; show the latest memory address
+  lda #NEWLINE
+  sta SERIAL
   jsr print_addr
   jmp get_key
 _get_key_new_addr:
