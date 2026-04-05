@@ -1,7 +1,10 @@
 import gc
+import json
+from utils import *
 from time import sleep
 from typing import Iterator
 from sys import implementation
+
 
 emulated = implementation.name == "cpython"
 if emulated:
@@ -9,7 +12,7 @@ if emulated:
 else:
     from hardware import HardwareTerminal
     from keypad import Keypad
-
+    
 from components.cpu import Cpu
 from components.ram import Ram
 from components.rom import Rom
@@ -82,6 +85,10 @@ def simulate(cpu: Cpu) -> Iterator[None]:
         except NotImplementedError as e: pass
 
 def main() -> None:
+    with open("cartridges.json", "r") as f:
+        cartridge_types = json.load(f)
+    carts = [f"{c}:cs{i+1}.bin" if exists(f"cs{i+1}.bin") and c is not None else None for i, c in enumerate(cartridge_types)]
+
     if emulated:
         terminal = SoftwareTerminal(160, 128, 10)
     else:
@@ -98,7 +105,9 @@ def main() -> None:
     terminal.write("Booting...")
     terminal.refresh()
 
-    cpu = create_machine("rom.bin", None, None, SerialOutput)
+    print("using carts:", *carts)
+
+    cpu = create_machine("rom.bin", *carts, SerialOutput)
     serial = cpu.mm_components["serial"]
     terminal.clear()
 

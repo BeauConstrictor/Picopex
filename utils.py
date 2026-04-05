@@ -1,5 +1,7 @@
 # replacements for for certain stdlib functions that aren't implemented in micropython
 
+import os
+
 def isnumeric(s: str) -> bool:
     if not s:
         return False
@@ -16,3 +18,10 @@ def translate(s: str, table: dict[str, str]) -> str:
 
 def sign(val: float) -> int:
         return 1 if val > 0 else -1 if val < 0 else 0
+
+def exists(filename: str) -> bool:
+    try:
+        os.stat(filename)
+        return True
+    except OSError:
+        return False
