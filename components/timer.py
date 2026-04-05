@@ -32,14 +32,14 @@ class Timer(MemoryMappedComponent):
         self.reg_a = reg_a
         self.reg_b = reg_b
         
-        self.begin = 0
+        self.begin = time.ticks_ms()
         self.resolution = 1 # ms per tick
         
     def contains(self, addr: int) -> bool:
         return addr in [self.reg_a, self.reg_b]
     
     def fetch(self, addr: int) -> int:
-        elapsed = (time.monotonic() - self.begin) * 1000 // self.resolution
+        elapsed = time.ticks_diff(time.ticks_ms(), self.begin) // self.resolution
         elapsed = int(elapsed) & 0xffff
         
         if addr == self.reg_a:
@@ -49,6 +49,6 @@ class Timer(MemoryMappedComponent):
     
     def write(self, addr: int, val: int) -> None:
         if addr == self.reg_a:
-            self.begin = time.monotonic()
+            self.begin = time.ticks_ms()
         elif addr == self.reg_b:
             self.resolution = max(1, val) # prevent div by 0
