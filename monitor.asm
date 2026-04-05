@@ -134,7 +134,6 @@ _get_key_check_addr:
 _get_key_new_addr:
   lda #NEWLINE
   sta SERIAL
-  sta SERIAL
 
   jsr get_byte
   sta CURRENT_ADDR+1
