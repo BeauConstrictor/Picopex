@@ -91,7 +91,7 @@ get_key:
   sta SERIAL         ; else, echo back the char.
   rts
 .exit:
-  lda #" "
+  lda #"\n"
   sta SERIAL
   jmp (EXIT_VEC)
 .shift:
@@ -205,7 +205,7 @@ print:
 
 welcome_message:
   .byte CLEAR
-  .byte "Ozpex 64 Calculator (Portable) v1.0.1\n\n"
+  .byte "Ozpex 64 Calculator (Portable) v1.0.2\n\n"
 
   .byte "Controls:\n"
   .byte "  e: #a\n"
