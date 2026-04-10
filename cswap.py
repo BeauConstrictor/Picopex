@@ -117,7 +117,7 @@ class App(tk.Tk):
         print("resetting...")
         subprocess.run(["mpremote", "soft-reset"])
         print("done.")
-        self.status.config(text="Installed.")
+        self.destroy()
 
 if __name__ == "__main__":
     App().mainloop()
