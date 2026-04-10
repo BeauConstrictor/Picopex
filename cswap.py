@@ -47,9 +47,9 @@ class CartFrame(tk.Frame):
     def change_file(self) -> None:
         file_path = filedialog.askopenfilename(
             title="Select a Cartridge",
-            initialdir=".",
+            initialdir="./bin",
             filetypes=[
-                ("Binary files", "*.bin"),
+                ("Binary files", "*"),
                 ("All files", "*.*")
             ]
         )
