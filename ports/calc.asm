@@ -205,9 +205,7 @@ print:
 
 welcome_message:
   .byte CLEAR
-  .byte "Ozpex 64 Calculator (Portable) v1.0.1\n"
-
-  .byte "TIP: Spaces are optional.\n\n"
+  .byte "Ozpex 64 Calculator (Portable) v1.0.1\n\n"
 
   .byte "Controls:\n"
   .byte "  e: #a\n"
