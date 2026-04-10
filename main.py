@@ -110,7 +110,7 @@ def main() -> None:
 
     print("using carts:", *carts)
 
-    cpu = create_machine("rom.bin", *carts, SerialOutput)
+    cpu = create_machine("bin/monitor", *carts, SerialOutput)
     serial = cpu.mm_components["serial"]
     terminal.clear()
 
@@ -123,12 +123,11 @@ def main() -> None:
             key_seq += key
             if len(key_seq) > len(RESET_SEQ):
                 key_seq = key_seq[1:]
-            if not emulated:
-                if key_seq == RESET_SEQ:
-                    terminal.clear()
-                    terminal.write("Reset.")
-                    terminal.refresh()
-                    machine.soft_reset()
+            if not emulated and key_seq == RESET_SEQ:
+                terminal.clear()
+                terminal.write("Reset.")
+                terminal.refresh()
+                machine.soft_reset()
 
         serial.output = None
 
